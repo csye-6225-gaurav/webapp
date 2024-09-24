@@ -5,15 +5,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/csye-6225-gaurav/webapp/repository"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 )
-
-type Repository struct {
-	DB *gorm.DB
-}
 
 func main() {
 	err := godotenv.Load(".env")
@@ -33,11 +29,11 @@ func main() {
 		log.Println("Failed DB connection")
 	}
 
-	r := Repository{
+	r := repository.Repository{
 		DB: db,
 	}
-	fmt.Println(r)
 	app := fiber.New()
+	r.SetupRoutes(app)
 	appPort := fmt.Sprintf(":%s", os.Getenv("APP_Port"))
 	app.Listen(appPort)
 }
