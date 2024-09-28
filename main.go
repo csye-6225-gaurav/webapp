@@ -5,8 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/csye-6225-gaurav/webapp/models"
-	"github.com/csye-6225-gaurav/webapp/repository"
 	"github.com/csye-6225-gaurav/webapp/routes"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
@@ -26,22 +24,13 @@ func main() {
 		DBname:  os.Getenv("DB_Name"),
 		SSLMode: os.Getenv("DB_SSLMode"),
 	}
-	db, err := storage.NewConnection(&config)
+	err = storage.NewConnection(&config)
 	if err != nil {
 		log.Println("Failed DB connection")
 	}
-	err = models.MigrateDB(db)
-	if err != nil {
-		log.Println(err)
-	}
-	tmp := repository.Repository{
-		DB: db,
-	}
-	r := routes.Repo{
-		Repository: &tmp,
-	}
+
 	app := fiber.New()
-	r.SetupRoutes(app)
+	routes.SetupRoutes(app)
 	appPort := fmt.Sprintf(":%s", os.Getenv("APP_Port"))
 	app.Listen(appPort)
 }
