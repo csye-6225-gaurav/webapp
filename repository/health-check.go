@@ -11,14 +11,6 @@ type Repository struct {
 	DB *gorm.DB
 }
 
-func (r *Repository) SetupRoutes(app *fiber.App) {
-	api := app.Group("")
-	api.All("/healthz", r.HealthCheck)
-	api.All("/healthz/*", func(ctx *fiber.Ctx) error {
-		ctx.Status(fiber.StatusNotFound)
-		return nil
-	})
-}
 func (r *Repository) HealthCheck(ctx *fiber.Ctx) error {
 
 	ctx.Set("cache-control", "no-cache")
