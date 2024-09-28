@@ -3,15 +3,11 @@ package repository
 import (
 	"log"
 
+	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
-type Repository struct {
-	DB *gorm.DB
-}
-
-func (r *Repository) HealthCheck(ctx *fiber.Ctx) error {
+func HealthCheck(ctx *fiber.Ctx) error {
 
 	ctx.Set("cache-control", "no-cache")
 	if ctx.Method() != fiber.MethodGet {
@@ -29,7 +25,7 @@ func (r *Repository) HealthCheck(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	sqlDB, err := r.DB.DB()
+	sqlDB, err := storage.DB.DB()
 	if err != nil {
 		log.Println("failed to get DB instance")
 	}
