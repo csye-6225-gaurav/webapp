@@ -14,4 +14,5 @@ func SetupRoutes(app *fiber.App) {
 	})
 	v1 := api.Group("/v1")
 	v1.Post("/user", repository.CreateUser)
+	v1.Get("/user/self", repository.GetUser)
 }
