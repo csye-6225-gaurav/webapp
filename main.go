@@ -5,7 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/csye-6225-gaurav/webapp/models"
 	"github.com/csye-6225-gaurav/webapp/repository"
+	"github.com/csye-6225-gaurav/webapp/routes"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -28,9 +30,15 @@ func main() {
 	if err != nil {
 		log.Println("Failed DB connection")
 	}
-
-	r := repository.Repository{
+	err = models.MigrateDB(db)
+	if err != nil {
+		log.Println(err)
+	}
+	tmp := repository.Repository{
 		DB: db,
+	}
+	r := routes.Repo{
+		Repository: &tmp,
 	}
 	app := fiber.New()
 	r.SetupRoutes(app)
