@@ -34,6 +34,14 @@ func CreateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid or missing email"})
 		return nil
 	}
+	if user.FirstName == "" {
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "FirstName required"})
+		return nil
+	}
+	if user.LastName == "" {
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "LastName required"})
+		return nil
+	}
 	if user.Password == "" {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
 		return nil
@@ -70,7 +78,11 @@ func GetUser(ctx *fiber.Ctx) error {
 
 	email := ctx.Locals("email").(string)
 	password := ctx.Locals("password").(string)
-
+	if len(ctx.Body()) > 0 {
+		log.Println("Request body is not allowed for get user endpoint")
+		ctx.Status(fiber.StatusBadRequest)
+		return nil
+	}
 	var user models.User
 	err := storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
@@ -97,7 +109,16 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	password := ctx.Locals("password").(string)
 
 	var user models.User
-	err := storage.DB.Where("email = ?", email).First(&user).Error
+	var updateUser models.UpdateUser
+	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
+	j.DisallowUnknownFields()
+	err := j.Decode(&updateUser)
+	if err != nil {
+		log.Println("Error decoding JSON:", err)
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
+		return nil
+	}
+	err = storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		ctx.Status(fiber.StatusNotFound).JSON(&fiber.Map{"message": "User not found"})
 		return nil
@@ -109,15 +130,8 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		return nil
 	}
 
-	updatedUser := models.User{}
-	err = ctx.BodyParser(&updatedUser)
-	if err != nil {
-		ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{"message": "Invalid request body"})
-		return err
-	}
-
-	if updatedUser.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
+	if updateUser.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Println("Error hashing password:", err)
 			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error while hashing password"})
@@ -126,11 +140,11 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		user.Password = string(hashedPassword)
 	}
 
-	if updatedUser.FirstName != "" {
-		user.FirstName = updatedUser.FirstName
+	if updateUser.FirstName != "" {
+		user.FirstName = updateUser.FirstName
 	}
-	if updatedUser.LastName != "" {
-		user.LastName = updatedUser.LastName
+	if updateUser.LastName != "" {
+		user.LastName = updateUser.LastName
 	}
 
 	err = storage.DB.Save(&user).Error

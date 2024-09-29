@@ -15,3 +15,9 @@ type User struct {
 	Password  string    `gorm:"notNull" form:"password" json:"password,omitempty"`
 	Email     string    `gorm:"type:varchar(254);unique; notNull" form:"email" json:"email,omitempty"`
 }
+
+type UpdateUser struct {
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Password  string `json:"password"`
+}
