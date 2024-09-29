@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"log"
 	"regexp"
 	"strings"
@@ -16,11 +16,19 @@ import (
 func CreateUser(ctx *fiber.Ctx) error {
 	user := models.User{}
 	user.ID = uuid.New()
-	err := ctx.BodyParser(&user)
+	if ctx.Method() != fiber.MethodPost {
+		log.Println("Method not allowed")
+		ctx.Status(fiber.StatusMethodNotAllowed)
+		return nil
+	}
+	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
+	j.DisallowUnknownFields()
+	err := j.Decode(&user)
 
 	if err != nil {
-		ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{"message": "request failed"})
-		return err
+		log.Println("Error decoding JSON:", err)
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
+		return nil
 	}
 	if user.Email == "" || !isValidEmail(user.Email) {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid or missing email"})
@@ -59,30 +67,12 @@ func isValidEmail(email string) bool {
 }
 
 func GetUser(ctx *fiber.Ctx) error {
-	authHeader := ctx.Get("Authorization")
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Basic ") {
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Missing or invalid Authorization header"})
-		return nil
-	}
 
-	encodedCredentials := strings.TrimPrefix(authHeader, "Basic ")
-	credentialsBytes, err := base64.StdEncoding.DecodeString(encodedCredentials)
-	if err != nil {
-		log.Println("Error decoding base64 credentials:", err)
-		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid base64 encoding"})
-		return nil
-	}
-
-	credentials := strings.SplitN(string(credentialsBytes), ":", 2)
-	if len(credentials) != 2 {
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials format"})
-		return nil
-	}
-	email := credentials[0]
-	password := credentials[1]
+	email := ctx.Locals("email").(string)
+	password := ctx.Locals("password").(string)
 
 	var user models.User
-	err = storage.DB.Where("email = ?", email).First(&user).Error
+	err := storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		log.Println("User not found:", err)
 		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
@@ -98,5 +88,57 @@ func GetUser(ctx *fiber.Ctx) error {
 	user.Password = ""
 
 	ctx.Status(fiber.StatusOK).JSON(user)
+	return nil
+}
+
+func UpdateUser(ctx *fiber.Ctx) error {
+
+	email := ctx.Locals("email").(string)
+	password := ctx.Locals("password").(string)
+
+	var user models.User
+	err := storage.DB.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		ctx.Status(fiber.StatusNotFound).JSON(&fiber.Map{"message": "User not found"})
+		return nil
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
+		return nil
+	}
+
+	updatedUser := models.User{}
+	err = ctx.BodyParser(&updatedUser)
+	if err != nil {
+		ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{"message": "Invalid request body"})
+		return err
+	}
+
+	if updatedUser.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Println("Error hashing password:", err)
+			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error while hashing password"})
+			return nil
+		}
+		user.Password = string(hashedPassword)
+	}
+
+	if updatedUser.FirstName != "" {
+		user.FirstName = updatedUser.FirstName
+	}
+	if updatedUser.LastName != "" {
+		user.LastName = updatedUser.LastName
+	}
+
+	err = storage.DB.Save(&user).Error
+	if err != nil {
+		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error updating user"})
+		return nil
+	}
+
+	ctx.Status(fiber.StatusNoContent)
 	return nil
 }
