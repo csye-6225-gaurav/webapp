@@ -16,9 +16,10 @@ import (
 func CreateUser(ctx *fiber.Ctx) error {
 	user := models.User{}
 	user.ID = uuid.New()
-	if ctx.Method() != fiber.MethodPost {
-		log.Println("Method not allowed")
-		ctx.Status(fiber.StatusMethodNotAllowed)
+
+	if len(ctx.Queries()) > 0 {
+		log.Println("Query parameters are not allowed for create user")
+		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
 	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
@@ -78,6 +79,11 @@ func GetUser(ctx *fiber.Ctx) error {
 
 	email := ctx.Locals("email").(string)
 	password := ctx.Locals("password").(string)
+	if len(ctx.Queries()) > 0 {
+		log.Println("Query parameters are not allowed for get user")
+		ctx.Status(fiber.StatusBadRequest)
+		return nil
+	}
 	if len(ctx.Body()) > 0 {
 		log.Println("Request body is not allowed for get user endpoint")
 		ctx.Status(fiber.StatusBadRequest)
@@ -107,7 +113,11 @@ func UpdateUser(ctx *fiber.Ctx) error {
 
 	email := ctx.Locals("email").(string)
 	password := ctx.Locals("password").(string)
-
+	if len(ctx.Queries()) > 0 {
+		log.Println("Query parameters are not allowed for update user")
+		ctx.Status(fiber.StatusBadRequest)
+		return nil
+	}
 	var user models.User
 	var updateUser models.UpdateUser
 	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
