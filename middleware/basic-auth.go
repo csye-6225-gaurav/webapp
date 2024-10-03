@@ -14,6 +14,7 @@ func BasicAuthMiddleware() fiber.Handler {
 		authHeader := ctx.Get("Authorization")
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Basic ") {
+			log.Panicln("Missing or invalid Authorization header")
 			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Missing or invalid Authorization header",
 			})
@@ -31,6 +32,7 @@ func BasicAuthMiddleware() fiber.Handler {
 
 		credentials := strings.SplitN(string(credentialsBytes), ":", 2)
 		if len(credentials) != 2 {
+			log.Panicln("Invalid credentials format")
 			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Invalid credentials format",
 			})
