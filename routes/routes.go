@@ -30,10 +30,6 @@ func SetupRoutes(app *fiber.App) {
 		return nil
 	})
 	v1 := api.Group("/v1")
-	v1.All("/user/self/*", func(ctx *fiber.Ctx) error {
-		ctx.Status(fiber.StatusNotFound)
-		return nil
-	})
 	v1.Post("/user", repository.CreateUser)
 	v1.Get("/user/self", middleware.BasicAuthMiddleware(), repository.GetUser)
 	v1.Put("/user/self", middleware.BasicAuthMiddleware(), repository.UpdateUser)

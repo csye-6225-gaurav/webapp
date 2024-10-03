@@ -66,7 +66,7 @@ func CreateUser(ctx *fiber.Ctx) error {
 			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "User already exists with the same email"})
 			return nil
 		}
-		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "could not create user"})
+		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not create user"})
 		return nil
 	}
 	user.Password = ""
@@ -98,8 +98,10 @@ func GetUser(ctx *fiber.Ctx) error {
 	var user models.User
 	err := storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
+		if strings.Contains(err.Error(), "connection refused") {
+			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
+		}
 		log.Println("User not found:", err)
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
 		return nil
 	}
 
@@ -136,7 +138,10 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	}
 	err = storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
-
+		if strings.Contains(err.Error(), "connection refused") {
+			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
+			return nil
+		}
 		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "User not found"})
 		return nil
 	}
@@ -146,13 +151,13 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
 		return nil
 	}
-	if updateUser.Password == "" {
-		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
-		return nil
-	}
 	if updateUser.Password != "" {
 		if len(updateUser.Password) < 8 {
 			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
+			return nil
+		}
+		if updateUser.Password == "" {
+			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password can't be empty"})
 			return nil
 		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
