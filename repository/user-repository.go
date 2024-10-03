@@ -2,7 +2,6 @@ package repository
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -45,6 +44,10 @@ func CreateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
 		return nil
 	}
+	if len(userReq.Password) < 8 {
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
+		return nil
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Println("Error hashing password:", err)
@@ -66,8 +69,8 @@ func CreateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "could not create user"})
 		return nil
 	}
-
-	ctx.Status(fiber.StatusCreated)
+	user.Password = ""
+	ctx.Status(fiber.StatusCreated).JSON(user)
 	return nil
 }
 
@@ -134,7 +137,7 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	err = storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
 
-		ctx.Status(fiber.StatusNotFound).JSON(&fiber.Map{"message": "User not found"})
+		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "User not found"})
 		return nil
 	}
 
@@ -143,8 +146,15 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
 		return nil
 	}
-
+	if updateUser.Password == "" {
+		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
+		return nil
+	}
 	if updateUser.Password != "" {
+		if len(updateUser.Password) < 8 {
+			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
+			return nil
+		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Println("Error hashing password:", err)
@@ -163,7 +173,6 @@ func UpdateUser(ctx *fiber.Ctx) error {
 
 	err = storage.DB.Save(&user).Error
 	if err != nil {
-		fmt.Println("///////////")
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error updating user"})
 		return nil
 	}
