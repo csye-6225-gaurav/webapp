@@ -26,6 +26,7 @@ func NewConnection(config *Config) error {
 	)
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
 	DB.AutoMigrate(&models.User{})
 	if err != nil {
 		return err

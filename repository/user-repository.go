@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -9,14 +10,11 @@ import (
 	"github.com/csye-6225-gaurav/webapp/models"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateUser(ctx *fiber.Ctx) error {
-	user := models.User{}
-	user.ID = uuid.New()
-
+	userReq := models.RequestUser{}
 	if len(ctx.Queries()) > 0 {
 		log.Println("Query parameters are not allowed for create user")
 		ctx.Status(fiber.StatusBadRequest)
@@ -24,36 +22,41 @@ func CreateUser(ctx *fiber.Ctx) error {
 	}
 	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
 	j.DisallowUnknownFields()
-	err := j.Decode(&user)
+	err := j.Decode(&userReq)
 
 	if err != nil {
 		log.Println("Error decoding JSON:", err)
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
 		return nil
 	}
-	if user.Email == "" || !isValidEmail(user.Email) {
+	if userReq.Email == "" || !isValidEmail(userReq.Email) {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid or missing email"})
 		return nil
 	}
-	if user.FirstName == "" {
+	if userReq.FirstName == "" {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "FirstName required"})
 		return nil
 	}
-	if user.LastName == "" {
+	if userReq.LastName == "" {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "LastName required"})
 		return nil
 	}
-	if user.Password == "" {
+	if userReq.Password == "" {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
 		return nil
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Println("Error hashing password:", err)
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error while hashing password"})
 		return nil
 	}
-	user.Password = string(hashedPassword)
+	user := models.User{
+		Email:     userReq.Email,
+		Password:  string(hashedPassword),
+		FirstName: userReq.FirstName,
+		LastName:  userReq.LastName,
+	}
 	err = storage.DB.Create(&user).Error
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"uni_users_email\" ") {
@@ -130,6 +133,7 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	}
 	err = storage.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
+
 		ctx.Status(fiber.StatusNotFound).JSON(&fiber.Map{"message": "User not found"})
 		return nil
 	}
@@ -159,6 +163,7 @@ func UpdateUser(ctx *fiber.Ctx) error {
 
 	err = storage.DB.Save(&user).Error
 	if err != nil {
+		fmt.Println("///////////")
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error updating user"})
 		return nil
 	}

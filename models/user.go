@@ -3,13 +3,13 @@ package models
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 )
 
 type User struct {
-	ID        uuid.UUID `gorm:"type:uuid;primary_key;" json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:uuid_generate_v4()" json:"id"`
+	CreatedAt time.Time `json:"account_created"`
+	UpdatedAt time.Time `json:"account_updated"`
 	FirstName string    `form:"first_name" json:"first_name,omitempty"`
 	LastName  string    `form:"last_name" json:"last_name,omitempty"`
 	Password  string    `gorm:"notNull" form:"password" json:"password,omitempty"`
@@ -17,6 +17,13 @@ type User struct {
 }
 
 type UpdateUser struct {
+	FirstName string `json:"first_name,omitempty"`
+	LastName  string `json:"last_name,omitempty"`
+	Password  string `json:"password"`
+}
+
+type RequestUser struct {
+	Email     string `json:"email"`
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
 	Password  string `json:"password"`
