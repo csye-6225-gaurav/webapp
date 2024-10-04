@@ -1,0 +1,12 @@
+name: Go-build
+
+on:
+    pull_request:
+      branches: [ "main" ]
+      
+jobs:
+  go-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
