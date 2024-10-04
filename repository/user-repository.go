@@ -29,6 +29,7 @@ func CreateUser(ctx *fiber.Ctx) error {
 		return nil
 	}
 	if userReq.Email == "" || !isValidEmail(userReq.Email) {
+		log.Println("Invalid or missing email")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid or missing email"})
 		return nil
 	}
