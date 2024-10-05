@@ -1,0 +1,42 @@
+name: Go-test
+
+on:
+    pull_request:
+      branches: [ "main" ]
+
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Intsall PostgreSQL
+        run: |
+          sudo apt update
+          sudo apt install -y postgresql postgresql-contrib
+          sudo systemctl start postgresql
+          sudo systemctl enable postgresql
+      - name: Configure PostgreSQL
+        run: |
+          sudo -u postgres psql -c "CREATE USER ${{ secrets.DB_USER }} WITH LOGIN CREATEDB PASSWORD '${{ secrets.DB_PASSWORD }}'"
+          sudo -u postgres psql -c "CREATE DATABASE ${{secrets.DB_NAME}} WITH OWNER = ${{ secrets.DB_USER }};"
+          sudo systemctl restart postgresql
+      - uses: actions/checkout@v4
+      - name: Configure Environment Variables
+        run: |
+          echo > .env
+          echo DB_Host=${{ secrets.DB_HOST }} >> .env
+          echo DB_User=${{ secrets.DB_USER }} >> .env
+          echo DB_Pass=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_Name=${{ secrets.DB_NAME }} >> .env
+          echo DB_Port=${{ secrets.DB_PORT }} >> .env
+          echo APP_Port=${{ secrets.PORT }} >> .env
+          echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
+      - name: Install GO
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.1'
+      - run: go version
+      - name: Install Dependencies
+        run: go get .
+      - name: Run Test
+        run: go test -v ./...
