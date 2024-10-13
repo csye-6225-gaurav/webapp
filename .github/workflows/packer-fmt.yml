@@ -19,7 +19,22 @@ jobs:
       - name: Run packer init
         id: init
         run: "packer init ./packer/packer.pkr.hcl"
-  
+      - name: make dummy binary
+        run: |
+          cd ./packer
+          touch webapp
+    
+      - name: Configure Environment Variables
+        run: |
+          echo > .env
+          echo DB_Host=${{ secrets.DB_HOST }} >> .env
+          echo DB_User=${{ secrets.DB_USER }} >> .env
+          echo DB_Pass=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_Name=${{ secrets.DB_NAME }} >> .env
+          echo DB_Port=${{ secrets.DB_PORT }} >> .env
+          echo APP_Port=${{ secrets.PORT }} >> .env
+          echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
+    
       - name: Run packer fmt
         id: fmt
         run: |
@@ -30,4 +45,15 @@ jobs:
         id: validate
         run: |
           cd ./packer
-          packer validate .
+          packer validate \
+          -var profile=${{ secrets.AWS_PROFILE }} \
+          -var region=${{ secrets.AWS_REGION }} \
+          -var source_ami=${{ secrets.SOURCE_AMI }} \
+          -var ami_name=${{ secrets.AMI_NAME }} \
+          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+          -var subnet_id=${{ secrets.SUBNET_ID }} \
+          -var ssh_username=${{ secrets.SSH_USERNAME }} \
+          -var db_password=${{ secrets.DB_PASSWORD }} \
+          -var db_user=${{ secrets.DB_USER }} \
+          -var db_name=${{ secrets.DB_NAME }} \
+          packer.pkr.hcl
