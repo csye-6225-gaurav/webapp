@@ -18,4 +18,8 @@ jobs:
       - name: Install Dependencies
         run: go get .
       - name: Build binary
-        run: go build -v ./...
+        run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o webapp main.go
+      - name: Copy Go binary to Packer directory
+        run: |
+          rm -f ./packer/webapp
+          cp ./webapp ./packer/
