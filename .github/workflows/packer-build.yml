@@ -50,6 +50,10 @@ jobs:
         uses: hashicorp/setup-packer@main
         id: setup
 
+      - name: Run packer init
+        id: init
+        run: "packer init ./packer/packer.pkr.hcl"
+
       - name: Build Packer image
         run: |
           cd ./packer
