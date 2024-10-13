@@ -1,0 +1,67 @@
+name: Packer Build
+
+on:
+    push:
+      branches:
+        - main
+
+
+jobs:
+  packer-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.1'
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Build Go binary
+        run: GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o webapp main.go
+
+      - name: Copy Go binary to Packer directory
+        run: |
+          rm -f ./packer/webapp
+          cp ./webapp ./packer/
+
+      - name: Set environment variables
+        run: |
+          echo > .env
+          echo DB_Host=${{ secrets.DB_HOST }} >> .env
+          echo DB_User=${{ secrets.DB_USER }} >> .env
+          echo DB_Pass=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_Name=${{ secrets.DB_NAME }} >> .env
+          echo DB_Port=${{ secrets.DB_PORT }} >> .env
+          echo APP_Port=${{ secrets.PORT }} >> .env
+          echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup packer
+        uses: hashicorp/setup-packer@main
+        id: setup
+
+      - name: Build Packer image
+        run: |
+          cd ./packer
+          packer build \
+          -var profile=${{ secrets.AWS_PROFILE }} \
+          -var region=${{ secrets.AWS_REGION }} \
+          -var source_ami=${{ secrets.SOURCE_AMI }} \
+          -var ami_name=${{ secrets.AMI_NAME }} \
+          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+          -var subnet_id=${{ secrets.SUBNET_ID }} \
+          -var ssh_username=${{ secrets.SSH_USERNAME }} \
+          -var db_password=${{ secrets.DB_PASSWORD }} \
+          -var db_user=${{ secrets.DB_USER }} \
+          -var db_name=${{ secrets.DB_NAME }} \
+          packer.pkr.hcl
