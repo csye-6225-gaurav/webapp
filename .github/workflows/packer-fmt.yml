@@ -10,24 +10,24 @@ jobs:
       runs-on: ubuntu-latest
       steps:
       - name: Checkout code
-          uses: actions/checkout@v4
+        uses: actions/checkout@v4
   
       - name: Setup packer
-          uses: hashicorp/setup-packer@main
-          id: setup
+        uses: hashicorp/setup-packer@main
+        id: setup
   
       - name: Run packer init
-          id: init
-          run: "packer init ./packer/packer.pkr.hcl"
+        id: init
+        run: "packer init ./packer/packer.pkr.hcl"
   
       - name: Run packer fmt
-          id: fmt
-          run: |
+        id: fmt
+        run: |
           cd ./packer
           packer fmt -check .
   
       - name: Run packer validate
-          id: validate
-          run: |
+        id: validate
+        run: |
           cd ./packer
           packer validate .
