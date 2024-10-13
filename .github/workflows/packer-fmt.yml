@@ -19,7 +19,22 @@ jobs:
       - name: Run packer init
         id: init
         run: "packer init ./packer/packer.pkr.hcl"
-  
+      - name: make dummy binary
+        run: |
+          cd ./packer
+          touch webapp
+    
+      - name: Configure Environment Variables
+        run: |
+          echo > .env
+          echo DB_Host=${{ secrets.DB_HOST }} >> .env
+          echo DB_User=${{ secrets.DB_USER }} >> .env
+          echo DB_Pass=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_Name=${{ secrets.DB_NAME }} >> .env
+          echo DB_Port=${{ secrets.DB_PORT }} >> .env
+          echo APP_Port=${{ secrets.PORT }} >> .env
+          echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
+    
       - name: Run packer fmt
         id: fmt
         run: |
