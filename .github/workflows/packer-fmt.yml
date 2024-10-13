@@ -30,4 +30,15 @@ jobs:
         id: validate
         run: |
           cd ./packer
-          packer validate .
+          packer validate \
+          -var profile=${{ secrets.AWS_PROFILE }} \
+          -var region=${{ secrets.AWS_REGION }} \
+          -var source_ami=${{ secrets.SOURCE_AMI }} \
+          -var ami_name=${{ secrets.AMI_NAME }} \
+          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+          -var subnet_id=${{ secrets.SUBNET_ID }} \
+          -var ssh_username=${{ secrets.SSH_USERNAME }} \
+          -var db_password=${{ secrets.DB_PASSWORD }} \
+          -var db_user=${{ secrets.DB_USER }} \
+          -var db_name=${{ secrets.DB_NAME }} \
+          packer.pkr.hcl

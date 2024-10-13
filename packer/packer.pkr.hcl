@@ -7,46 +7,101 @@ packer {
   }
 }
 
+variable "profile" {
+  type        = string
+  description = "The AWS CLI profile to use"
+}
 
-source "amazon-ebs" "test" {
-  profile       = "dev"
-  region        = "us-east-1"
-  source_ami    = "ami-0866a3c8686eaeeba"
-  ami_name      = "test-ami-{{timestamp}}"
-  instance_type = "t2.micro"
-  subnet_id     = "subnet-08d00738e387c298a"
-  ssh_username  = "ubuntu"
+variable "region" {
+  type        = string
+  description = "The AWS region"
+}
+
+variable "source_ami" {
+  type        = string
+  description = "The base AMI to use for creating the new image"
+}
+
+variable "instance_type" {
+  type        = string
+  description = "The instance type for the build"
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "The Subnet ID in which the instance will be created"
+}
+
+variable "ssh_username" {
+  type        = string
+  description = "The SSH username for the instance"
+  default     = "ubuntu"
+}
+
+variable "db_user" {
+  type        = string
+  description = "PostgreSQL database user"
+}
+
+variable "db_password" {
+  type        = string
+  description = "PostgreSQL database password"
+}
+
+variable "db_name" {
+  type        = string
+  description = "PostgreSQL database name"
+}
+
+variable "ami_name" {
+  type        = string
+  description = "Prefix for the AMI name"
+}
+
+
+source "amazon-ebs" "ubuntu" {
+  profile       = var.profile
+  region        = var.region
+  source_ami    = var.source_ami
+  ami_name      = var.ami_name
+  instance_type = var.instance_type
+  subnet_id     = var.subnet_id
+  ssh_username  = var.ssh_username
 }
 
 build {
   name    = "test-ami-builder"
-  sources = ["source.amazon-ebs.test"]
+  sources = ["source.amazon-ebs.ubuntu"]
 
 
   provisioner "shell" {
-    inline = [
-      "echo set debconf to Noninteractive",
-      "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
-      "sudo apt-get update -y && sudo apt-get upgrade -y",
-      "sudo apt install postgresql postgresql-contrib -y",
-    ]
+    script = "./scripts/create_user.sh"
   }
   # Create PostgreSQL user and database
   provisioner "shell" {
-    inline = [
-      "sudo -u postgres psql -c \"CREATE USER clouduser WITH LOGIN CREATEDB PASSWORD 'CloudUser123';\"",
-      "sudo -u postgres psql -c \"CREATE DATABASE cloud_db WITH OWNER = clouduser;\""
+    environment_vars = [
+      "DB_USER= ${var.db_user}",
+      "DB_PASSWORD=${var.db_password}",
+      "DB_NAME=${var.db_name}"
     ]
+    script = "./scripts/postgres_setup.sh"
   }
   provisioner "file" {
     source      = "webapp"
     destination = "/tmp/webapp"
   }
+  provisioner "file" {
+    source      = "../.env"
+    destination = "/tmp/.env"
+  }
   provisioner "shell" {
-    inline = [
-      "sudo mkdir -p /usr/bin/",
-      "sudo mv /tmp/webapp /usr/bin/",
-      "sudo chmod +x /usr/bin/webapp"
-    ]
+    script = "./scripts/binary_env_setup.sh"
+  }
+  provisioner "file" {
+    source      = "./webapp.service"
+    destination = "/tmp/webapp.service"
+  }
+  provisioner "shell" {
+    script = "./scripts/systemd_conf.sh"
   }
 }
