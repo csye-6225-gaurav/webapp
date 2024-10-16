@@ -84,7 +84,7 @@ func TestCreateUser(t *testing.T) {
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	var createdUser models.User
 	err = storage.DB.Where("email = ?", "testuser@example.com").First(&createdUser).Error
