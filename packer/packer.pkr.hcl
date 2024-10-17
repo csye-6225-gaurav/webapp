@@ -58,6 +58,11 @@ variable "ami_name" {
   description = "Prefix for the AMI name"
 }
 
+variable "ami_users" {
+  type        = list(string)
+  description = "List of accounts with access to the AMI"
+}
+
 
 source "amazon-ebs" "ubuntu" {
   profile       = var.profile
@@ -67,6 +72,7 @@ source "amazon-ebs" "ubuntu" {
   instance_type = var.instance_type
   subnet_id     = var.subnet_id
   ssh_username  = var.ssh_username
+  ami_users     = var.ami_users
 }
 
 build {
