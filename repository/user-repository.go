@@ -39,6 +39,7 @@ func CreateUser(ctx *fiber.Ctx) error {
 		return nil
 	}
 	if userReq.LastName == "" {
+		log.Println("lastName empty")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "LastName required"})
 		return nil
 	}
