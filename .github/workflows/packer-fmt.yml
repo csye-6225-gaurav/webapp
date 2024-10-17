@@ -56,4 +56,5 @@ jobs:
           -var db_password=${{ secrets.DB_PASSWORD }} \
           -var db_user=${{ secrets.DB_USER }} \
           -var db_name=${{ secrets.DB_NAME }} \
+          -var 'ami_users=[${{ secrets.DEMO_ACCOUNT_ID }}]' \
           packer.pkr.hcl
