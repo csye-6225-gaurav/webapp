@@ -38,21 +38,6 @@ variable "ssh_username" {
   default     = "ubuntu"
 }
 
-variable "db_user" {
-  type        = string
-  description = "PostgreSQL database user"
-}
-
-variable "db_password" {
-  type        = string
-  description = "PostgreSQL database password"
-}
-
-variable "db_name" {
-  type        = string
-  description = "PostgreSQL database name"
-}
-
 variable "ami_name" {
   type        = string
   description = "Prefix for the AMI name"
@@ -83,23 +68,12 @@ build {
   provisioner "shell" {
     script = "./scripts/create_user.sh"
   }
-  # Create PostgreSQL user and database
-  provisioner "shell" {
-    environment_vars = [
-      "DB_USER= ${var.db_user}",
-      "DB_PASSWORD=${var.db_password}",
-      "DB_NAME=${var.db_name}"
-    ]
-    script = "./scripts/postgres_setup.sh"
-  }
+
   provisioner "file" {
     source      = "webapp"
     destination = "/tmp/webapp"
   }
-  provisioner "file" {
-    source      = "../.env"
-    destination = "/tmp/.env"
-  }
+
   provisioner "shell" {
     script = "./scripts/binary_env_setup.sh"
   }

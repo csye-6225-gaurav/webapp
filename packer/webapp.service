@@ -1,5 +1,6 @@
 [Unit]
 Description=WebApp Service
+ConditionPathExists=/opt/webapp.flag
 After=network.target
 
 [Service]
