@@ -28,17 +28,6 @@ jobs:
           rm -f ./packer/webapp
           cp ./webapp ./packer/
 
-      - name: Set environment variables
-        run: |
-          echo > .env
-          echo DB_Host=${{ secrets.DB_HOST }} >> .env
-          echo DB_User=${{ secrets.DB_USER }} >> .env
-          echo DB_Pass=${{ secrets.DB_PASSWORD }} >> .env
-          echo DB_Name=${{ secrets.DB_NAME }} >> .env
-          echo DB_Port=${{ secrets.DB_PORT }} >> .env
-          echo APP_Port=${{ secrets.PORT }} >> .env
-          echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -65,8 +54,5 @@ jobs:
           -var instance_type=${{ secrets.INSTANCE_TYPE }} \
           -var subnet_id=${{ secrets.SUBNET_ID }} \
           -var ssh_username=${{ secrets.SSH_USERNAME }} \
-          -var db_password=${{ secrets.DB_PASSWORD }} \
-          -var db_user=${{ secrets.DB_USER }} \
-          -var db_name=${{ secrets.DB_NAME }} \
           -var 'ami_users=[${{ secrets.DEMO_ACCOUNT_ID }}]' \
           packer.pkr.hcl
