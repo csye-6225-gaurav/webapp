@@ -44,7 +44,7 @@ variable "ami_name" {
 }
 
 variable "ami_users" {
-  type        = list(string)
+  type        =   list(string)
   description = "List of accounts with access to the AMI"
 }
 
