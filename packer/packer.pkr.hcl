@@ -44,13 +44,13 @@ variable "ami_name" {
 }
 
 variable "ami_users" {
-  type        =   list(string)
+  type        = list(string)
   description = "List of accounts with access to the AMI"
 }
 
 
 source "amazon-ebs" "ubuntu" {
-  profile       = var.profile
+  profile       = var.profilee
   region        = var.region
   source_ami    = var.source_ami
   ami_name      = var.ami_name
