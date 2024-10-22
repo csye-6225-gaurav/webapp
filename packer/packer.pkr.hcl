@@ -50,7 +50,7 @@ variable "ami_users" {
 
 
 source "amazon-ebs" "ubuntu" {
-  profile       = var.profilee
+  profile       = var.profile
   region        = var.region
   source_ami    = var.source_ami
   ami_name      = var.ami_name
