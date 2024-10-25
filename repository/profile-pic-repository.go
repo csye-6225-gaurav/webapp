@@ -38,7 +38,7 @@ func SaveProfilePic(ctx *fiber.Ctx) error {
 			"message": "Failed to read file",
 		})
 	}
-	bucketName := "csye6225-webapp"
+	bucketName := os.Getenv("Bucket_Name")
 	// Construct S3 file path
 	fileName := fmt.Sprintf("%s/%s", user.ID.String(), file.Filename)
 
