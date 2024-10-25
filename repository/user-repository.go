@@ -86,8 +86,9 @@ func isValidEmail(email string) bool {
 
 func GetUser(ctx *fiber.Ctx) error {
 
-	email := ctx.Locals("email").(string)
-	password := ctx.Locals("password").(string)
+	// email := ctx.Locals("email").(string)
+	// password := ctx.Locals("password").(string)
+	user := ctx.Locals("user").(models.User)
 	if len(ctx.Queries()) > 0 {
 		log.Println("Query parameters are not allowed for get user")
 		ctx.Status(fiber.StatusBadRequest)
@@ -98,21 +99,21 @@ func GetUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	var user models.User
-	err := storage.DB.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
-		}
-		log.Println("User not found:", err)
-		return nil
-	}
+	// var user models.User
+	// err := storage.DB.Where("email = ?", email).First(&user).Error
+	// if err != nil {
+	// 	if strings.Contains(err.Error(), "connection refused") {
+	// 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
+	// 	}
+	// 	log.Println("User not found:", err)
+	// 	return nil
+	// }
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
-		return nil
-	}
+	// err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	// if err != nil {
+	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
+	// 	return nil
+	// }
 
 	user.Password = ""
 
@@ -122,14 +123,15 @@ func GetUser(ctx *fiber.Ctx) error {
 
 func UpdateUser(ctx *fiber.Ctx) error {
 
-	email := ctx.Locals("email").(string)
-	password := ctx.Locals("password").(string)
+	// email := ctx.Locals("email").(string)
+	// password := ctx.Locals("password").(string)
+	user := ctx.Locals("user").(models.User)
 	if len(ctx.Queries()) > 0 {
 		log.Println("Query parameters are not allowed for update user")
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	var user models.User
+	// var user models.User
 	var updateUser models.UpdateUser
 	j := json.NewDecoder(strings.NewReader(string(ctx.Body())))
 	j.DisallowUnknownFields()
@@ -139,21 +141,21 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
 		return nil
 	}
-	err = storage.DB.Where("email = ?", email).First(&user).Error
-	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") {
-			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
-			return nil
-		}
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "User not found"})
-		return nil
-	}
+	// err = storage.DB.Where("email = ?", email).First(&user).Error
+	// if err != nil {
+	// 	if strings.Contains(err.Error(), "connection refused") {
+	// 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
+	// 		return nil
+	// 	}
+	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "User not found"})
+	// 	return nil
+	// }
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
-		return nil
-	}
+	// err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	// if err != nil {
+	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
+	// 	return nil
+	// }
 	if updateUser.Password != "" {
 		if len(updateUser.Password) < 8 {
 			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
