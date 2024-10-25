@@ -5,7 +5,10 @@ import (
 	"log"
 	"strings"
 
+	"github.com/csye-6225-gaurav/webapp/models"
+	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func BasicAuthMiddleware() fiber.Handler {
@@ -41,8 +44,23 @@ func BasicAuthMiddleware() fiber.Handler {
 		email := credentials[0]
 		password := credentials[1]
 
-		ctx.Locals("email", email)
-		ctx.Locals("password", password)
+		var user models.User
+		err = storage.DB.Where("email = ?", email).First(&user).Error
+		if err != nil {
+			if strings.Contains(err.Error(), "connection refused") {
+				ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "User not found"})
+			}
+			log.Println("User not found:", err)
+			return nil
+		}
+
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+		if err != nil {
+			ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
+			return nil
+		}
+
+		ctx.Locals("user", user)
 
 		return ctx.Next()
 	}

@@ -29,6 +29,8 @@ func main() {
 		log.Println("Failed DB connection")
 	}
 
+	storage.ConnectToS3()
+
 	app := fiber.New()
 	routes.SetupRoutes(app)
 	appPort := fmt.Sprintf(":%s", os.Getenv("APP_Port"))

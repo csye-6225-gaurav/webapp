@@ -53,5 +53,6 @@ func SetupRoutes(app *fiber.App) {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-
+	v1.Post("/user/self/pic", middleware.BasicAuthMiddleware(), repository.SaveProfilePic)
+	v1.Get("/user/self/pic", middleware.BasicAuthMiddleware(), repository.GetProfilePic)
 }

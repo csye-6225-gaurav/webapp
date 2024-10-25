@@ -33,6 +33,7 @@ jobs:
           echo DB_Port=${{ secrets.DB_PORT }} >> .env
           echo APP_Port=${{ secrets.PORT }} >> .env
           echo DB_SSLMode=${{ secrets.DB_SSLMODE }} >> .env
+          echo S3_Bucket=abc >> .env
       - name: Install GO
         uses: actions/setup-go@v5
         with:
