@@ -13,7 +13,7 @@ var S3Client *s3.Client
 func ConnectToS3() {
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
-		config.WithSharedConfigProfile("demo"),
+		config.WithRegion("us-east-1"),
 	)
 
 	if err != nil {
