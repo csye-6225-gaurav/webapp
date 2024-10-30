@@ -48,7 +48,9 @@ func SaveProfilePic(ctx *fiber.Ctx) error {
 		Key:    &fileName,
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
+	log.Println("file uploaded successfully")
 	if err != nil {
+		log.Println(err)
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to upload file to S3",
 		})
@@ -82,4 +84,36 @@ func GetProfilePic(ctx *fiber.Ctx) error {
 
 	ctx.Status(fiber.StatusOK).JSON(image)
 	return nil
+}
+
+func DeleteProfilePic(ctx *fiber.Ctx) error {
+	user := ctx.Locals("user").(models.User)
+	var image models.Image
+
+	err := storage.DB.Where("user_id = ?", user.ID).First(&image).Error
+	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Image not found"})
+		}
+		log.Println("Failed to fetch image metadata:", err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to fetch image metadata"})
+	}
+
+	bucketName := os.Getenv("Bucket_Name")
+	filePath := fmt.Sprintf("%s/%s", user.ID.String(), image.FileName)
+	_, err = storage.S3Client.DeleteObject(ctx.Context(), &s3.DeleteObjectInput{
+		Bucket: &bucketName,
+		Key:    &filePath,
+	})
+	if err != nil {
+		log.Println("Failed to delete image from S3:", err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image from S3"})
+	}
+
+	if err := storage.DB.Delete(&image).Error; err != nil {
+		log.Println("Failed to delete image metadata:", err)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Failed to delete image metadata"})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Profile picture deleted successfully"})
 }
