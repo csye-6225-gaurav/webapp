@@ -15,7 +15,7 @@ func InitStatsD() {
 }
 
 func CountIncrement(path string) {
-	client.Incr("api.endpoint:"+path, 1)
+	client.Incr("api.endpoint.count"+path, 1)
 }
 
 func CountTimer(path string, startTime time.Time) {
