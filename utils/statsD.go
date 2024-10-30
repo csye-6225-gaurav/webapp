@@ -6,18 +6,18 @@ import (
 	"github.com/smira/go-statsd"
 )
 
-var client *statsd.Client
+var Client *statsd.Client
 
 func InitStatsD() {
-	client = statsd.NewClient("localhost:8125",
+	Client = statsd.NewClient("localhost:8125",
 		statsd.MaxPacketSize(1400),
 		statsd.MetricPrefix("web."))
 }
 
 func CountIncrement(path string) {
-	client.Incr("api.endpoint.count"+path, 1)
+	Client.Incr("api.endpoint.count"+path, 1)
 }
 
 func CountTimer(path string, startTime time.Time) {
-	client.PrecisionTiming("api.endpoint.latency"+path, time.Since(startTime))
+	Client.PrecisionTiming("api.endpoint.latency"+path, time.Since(startTime))
 }

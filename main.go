@@ -2,20 +2,25 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"github.com/csye-6225-gaurav/webapp/routes"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/csye-6225-gaurav/webapp/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
+	zlog "github.com/rs/zerolog/log"
 )
 
 func main() {
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().UTC()
+	}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal(err)
+		zlog.Fatal().Msg(err.Error())
 	}
 	config := storage.Config{
 		Host:    os.Getenv("DB_Host"),
@@ -27,7 +32,7 @@ func main() {
 	}
 	err = storage.NewConnection(&config)
 	if err != nil {
-		log.Println("Failed DB connection")
+		zlog.Error().Msg(err.Error())
 	}
 
 	storage.ConnectToS3()
@@ -35,5 +40,6 @@ func main() {
 	app := fiber.New()
 	routes.SetupRoutes(app)
 	appPort := fmt.Sprintf(":%s", os.Getenv("APP_Port"))
+	zlog.Info().Msg("application started successfully")
 	app.Listen(appPort)
 }

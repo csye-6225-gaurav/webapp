@@ -2,20 +2,22 @@ package repository
 
 import (
 	"encoding/json"
-	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/csye-6225-gaurav/webapp/models"
 	"github.com/csye-6225-gaurav/webapp/storage"
+	"github.com/csye-6225-gaurav/webapp/utils"
 	"github.com/gofiber/fiber/v2"
+	zlog "github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func CreateUser(ctx *fiber.Ctx) error {
 	userReq := models.RequestUser{}
 	if len(ctx.Queries()) > 0 {
-		log.Println("Query parameters are not allowed for create user")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Query parameters are not allowed for CreateUser endpoint")
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
@@ -24,36 +26,38 @@ func CreateUser(ctx *fiber.Ctx) error {
 	err := j.Decode(&userReq)
 
 	if err != nil {
-		log.Println("Error decoding JSON:", err)
+		zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Error decoding JSON")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
 		return nil
 	}
 	if userReq.Email == "" || !isValidEmail(userReq.Email) {
-		log.Println("Invalid or missing email")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Invalid or missing email")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid or missing email"})
 		return nil
 	}
 	if userReq.FirstName == "" {
-		log.Println("FirstName empty")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("FirstName is required")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "FirstName required"})
 		return nil
 	}
 	if userReq.LastName == "" {
-		log.Println("lastName empty")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("LastName is required")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "LastName required"})
 		return nil
 	}
 	if userReq.Password == "" {
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Password is required")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password is required"})
 		return nil
 	}
 	if len(userReq.Password) < 8 {
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Password should be more than 8 characters")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
 		return nil
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userReq.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("Error hashing password:", err)
+		zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Error hashing password")
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error while hashing password"})
 		return nil
 	}
@@ -63,16 +67,21 @@ func CreateUser(ctx *fiber.Ctx) error {
 		FirstName: userReq.FirstName,
 		LastName:  userReq.LastName,
 	}
+	start := time.Now()
 	err = storage.DB.Create(&user).Error
+	utils.Client.PrecisionTiming("db.createUser", time.Since(start))
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"uni_users_email\" ") {
+			zlog.Error().Err(err).Str("endpoint", ctx.Path()).Str("email", user.Email).Msg("User already exists with the same email")
 			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "User already exists with the same email"})
 			return nil
 		}
+		zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Failed to create user in database")
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not create user"})
 		return nil
 	}
 	user.Password = ""
+	zlog.Info().Str("endpoint", ctx.Path()).Str("user_id", user.ID.String()).Msg("User created successfully")
 	ctx.Status(fiber.StatusCreated).JSON(user)
 	return nil
 }
@@ -86,48 +95,29 @@ func isValidEmail(email string) bool {
 
 func GetUser(ctx *fiber.Ctx) error {
 
-	// email := ctx.Locals("email").(string)
-	// password := ctx.Locals("password").(string)
 	user := ctx.Locals("user").(models.User)
 	if len(ctx.Queries()) > 0 {
-		log.Println("Query parameters are not allowed for get user")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Query parameters are not allowed for GetUser endpoint")
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
 	if len(ctx.Body()) > 0 {
-		log.Println("Request body is not allowed for get user endpoint")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Request body is not allowed for GetUser endpoint")
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	// var user models.User
-	// err := storage.DB.Where("email = ?", email).First(&user).Error
-	// if err != nil {
-	// 	if strings.Contains(err.Error(), "connection refused") {
-	// 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
-	// 	}
-	// 	log.Println("User not found:", err)
-	// 	return nil
-	// }
-
-	// err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	// if err != nil {
-	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
-	// 	return nil
-	// }
 
 	user.Password = ""
-
+	zlog.Info().Str("endpoint", ctx.Path()).Str("user_id", user.ID.String()).Msg("User retrieved successfully")
 	ctx.Status(fiber.StatusOK).JSON(user)
 	return nil
 }
 
 func UpdateUser(ctx *fiber.Ctx) error {
 
-	// email := ctx.Locals("email").(string)
-	// password := ctx.Locals("password").(string)
 	user := ctx.Locals("user").(models.User)
 	if len(ctx.Queries()) > 0 {
-		log.Println("Query parameters are not allowed for update user")
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Query parameters are not allowed for UpdateUser endpoint")
 		ctx.Status(fiber.StatusBadRequest)
 		return nil
 	}
@@ -137,27 +127,14 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	j.DisallowUnknownFields()
 	err := j.Decode(&updateUser)
 	if err != nil {
-		log.Println("Error decoding JSON:", err)
+		zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Error decoding JSON in UpdateUser")
 		ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Invalid request body"})
 		return nil
 	}
-	// err = storage.DB.Where("email = ?", email).First(&user).Error
-	// if err != nil {
-	// 	if strings.Contains(err.Error(), "connection refused") {
-	// 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not fetch user"})
-	// 		return nil
-	// 	}
-	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "User not found"})
-	// 	return nil
-	// }
 
-	// err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	// if err != nil {
-	// 	ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid credentials"})
-	// 	return nil
-	// }
 	if updateUser.Password != "" {
 		if len(updateUser.Password) < 8 {
+			zlog.Error().Str("endpoint", ctx.Path()).Msg("Password should be more than 8 characters")
 			ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{"message": "Password should be more than 8 characters"})
 			return nil
 		}
@@ -167,7 +144,7 @@ func UpdateUser(ctx *fiber.Ctx) error {
 		}
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updateUser.Password), bcrypt.DefaultCost)
 		if err != nil {
-			log.Println("Error hashing password:", err)
+			zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Error hashing password in UpdateUser")
 			ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error while hashing password"})
 			return nil
 		}
@@ -180,13 +157,15 @@ func UpdateUser(ctx *fiber.Ctx) error {
 	if updateUser.LastName != "" {
 		user.LastName = updateUser.LastName
 	}
-
+	start := time.Now()
 	err = storage.DB.Save(&user).Error
+	utils.Client.PrecisionTiming("db.updateUser", time.Since(start))
 	if err != nil {
+		zlog.Error().Err(err).Str("endpoint", ctx.Path()).Msg("Error updating user in the database")
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "Error updating user"})
 		return nil
 	}
-
+	zlog.Info().Str("endpoint", ctx.Path()).Str("user_id", user.ID.String()).Msg("User updated successfully")
 	ctx.Status(fiber.StatusNoContent)
 	return nil
 }

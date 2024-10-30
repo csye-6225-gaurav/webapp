@@ -47,6 +47,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rs/zerolog v1.33.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/smira/go-statsd v1.3.4
 	github.com/stretchr/testify v1.9.0
