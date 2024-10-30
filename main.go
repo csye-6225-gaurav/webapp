@@ -7,6 +7,7 @@ import (
 
 	"github.com/csye-6225-gaurav/webapp/routes"
 	"github.com/csye-6225-gaurav/webapp/storage"
+	"github.com/csye-6225-gaurav/webapp/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
@@ -30,7 +31,7 @@ func main() {
 	}
 
 	storage.ConnectToS3()
-
+	utils.InitStatsD()
 	app := fiber.New()
 	routes.SetupRoutes(app)
 	appPort := fmt.Sprintf(":%s", os.Getenv("APP_Port"))

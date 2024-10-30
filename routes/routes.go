@@ -24,36 +24,36 @@ func SetupRoutes(app *fiber.App) {
 		}
 		return ctx.Next()
 	})
-	api.Get("/healthz", repository.HealthCheck)
-	api.All("/healthz/*", func(ctx *fiber.Ctx) error {
+	api.Get("/healthz", middleware.CountMetric(), repository.HealthCheck)
+	api.All("/healthz/*", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusNotFound)
 		return nil
 	})
 	v1 := api.Group("/v1")
-	v1.Post("/user", repository.CreateUser)
-	v1.Get("/user/self", middleware.BasicAuthMiddleware(), repository.GetUser)
-	v1.Put("/user/self", middleware.BasicAuthMiddleware(), repository.UpdateUser)
-	v1.Post("/user/self", func(ctx *fiber.Ctx) error {
+	v1.Post("/user", middleware.CountMetric(), repository.CreateUser)
+	v1.Get("/user/self", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.GetUser)
+	v1.Put("/user/self", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.UpdateUser)
+	v1.Post("/user/self", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-	v1.Patch("/user/self", func(ctx *fiber.Ctx) error {
+	v1.Patch("/user/self", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-	v1.Head("/user/self", func(ctx *fiber.Ctx) error {
+	v1.Head("/user/self", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-	v1.Delete("/user/self", func(ctx *fiber.Ctx) error {
+	v1.Delete("/user/self", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-	v1.Options("/user/self", func(ctx *fiber.Ctx) error {
+	v1.Options("/user/self", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusMethodNotAllowed)
 		return nil
 	})
-	v1.Post("/user/self/pic", middleware.BasicAuthMiddleware(), repository.SaveProfilePic)
-	v1.Get("/user/self/pic", middleware.BasicAuthMiddleware(), repository.GetProfilePic)
-	v1.Delete("/user/self/pic", middleware.BasicAuthMiddleware(), repository.DeleteProfilePic)
+	v1.Post("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.SaveProfilePic)
+	v1.Get("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.GetProfilePic)
+	v1.Delete("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.DeleteProfilePic)
 }

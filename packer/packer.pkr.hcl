@@ -81,7 +81,15 @@ build {
     source      = "./webapp.service"
     destination = "/tmp/webapp.service"
   }
+  provisioner "file" {
+    source      = "./cloudwatch-config.json"
+    destination = "/tmp/cloudwatch-config.json"
+  }
   provisioner "shell" {
     script = "./scripts/systemd_conf.sh"
   }
+  provisioner "shell" {
+    script = "./scripts/cloudwatch_setup.sh"
+  }
+
 }

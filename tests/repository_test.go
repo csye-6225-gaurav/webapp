@@ -14,6 +14,7 @@ import (
 	"github.com/csye-6225-gaurav/webapp/models"
 	"github.com/csye-6225-gaurav/webapp/routes"
 	"github.com/csye-6225-gaurav/webapp/storage"
+	"github.com/csye-6225-gaurav/webapp/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ func TestMain(m *testing.M) {
 	}
 	storage.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 	storage.DB.AutoMigrate(&models.User{})
-
+	utils.InitStatsD()
 	// Run tests
 	code := m.Run()
 

@@ -12,8 +12,8 @@ ExecStart=/usr/bin/webapp
 Restart=on-failure
 RestartSec=60
 
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=append:/var/log/webapp/webapp.log
+StandardError=append:/var/log/webapp/webapp.log
 SyslogIdentifier=webapp
 [Install]
 WantedBy=multi-user.target
