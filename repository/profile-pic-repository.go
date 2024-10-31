@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,6 +52,18 @@ func SaveProfilePic(ctx *fiber.Ctx) error {
 			"message": "Failed to parse profile picture",
 		})
 	}
+	allowedExtensions := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+	}
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if !allowedExtensions[ext] {
+		zlog.Warn().Str("endpoint", endpoint).Str("file_extension", ext).Msg("Invalid file format")
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Only JPG, JPEG, and PNG formats are allowed",
+		})
+	}
 	fileContent, err := file.Open()
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -86,7 +99,7 @@ func SaveProfilePic(ctx *fiber.Ctx) error {
 	zlog.Info().Str("endpoint", endpoint).Str("user_id", user.ID.String()).Msg("File uploaded successfully")
 	image = models.Image{
 		FileName:   file.Filename,
-		URL:        fmt.Sprintf("https://%s/%s", os.Getenv("S3_Bucket"), fileName),
+		URL:        fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", bucketName, os.Getenv("region"), fileName),
 		UploadDate: time.Now(),
 		UserID:     user.ID,
 	}
