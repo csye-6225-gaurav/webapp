@@ -117,6 +117,11 @@ func GetProfilePic(ctx *fiber.Ctx) error {
 	user := ctx.Locals("user").(models.User)
 	endpoint := ctx.Path()
 	var image models.Image
+	if len(ctx.Body()) > 0 {
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Request body is not allowed for Get profile pic endpoint")
+		ctx.Status(fiber.StatusBadRequest)
+		return nil
+	}
 	err := storage.DB.Where("user_id = ?", user.ID).First(&image).Error
 	if err != nil {
 		zlog.Warn().Err(err).Str("endpoint", endpoint).Str("user_id", user.ID.String()).Msg("Image not found")
@@ -135,7 +140,11 @@ func DeleteProfilePic(ctx *fiber.Ctx) error {
 	user := ctx.Locals("user").(models.User)
 	endpoint := ctx.Path()
 	var image models.Image
-
+	if len(ctx.Body()) > 0 {
+		zlog.Error().Str("endpoint", ctx.Path()).Msg("Request body is not allowed for Delete profile pic endpoint")
+		ctx.Status(fiber.StatusBadRequest)
+		return nil
+	}
 	err := storage.DB.Where("user_id = ?", user.ID).First(&image).Error
 	if err != nil {
 		zlog.Warn().Err(err).Str("endpoint", endpoint).Str("user_id", user.ID.String()).Msg("Failed to fetch image metadata")
