@@ -78,7 +78,14 @@ func BasicAuthMiddleware() fiber.Handler {
 			ctx.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{"message": "Invalid email or password"})
 			return nil
 		}
-
+		if !user.IsVerified {
+			zlog.Warn().
+				Str("endpoint", ctx.Path()).
+				Str("email", email).
+				Msg("user not verified")
+			ctx.Status(fiber.StatusForbidden).JSON(&fiber.Map{"message": "user not verified"})
+			return nil
+		}
 		ctx.Locals("user", user)
 		zlog.Info().
 			Str("endpoint", ctx.Path()).

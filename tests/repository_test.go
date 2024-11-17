@@ -100,14 +100,19 @@ func TestCreateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	app := setupApp()
 
-	user := models.User{
+	testUser := models.User{
 		Email:     "testuser@example.com",
 		FirstName: "Test",
 		LastName:  "User",
 	}
-
+	var user models.User
+	err := storage.DB.Where("email = ?", testUser.Email).First(&user).Error
+	user.IsVerified = true
+	if err := storage.DB.Save(&user).Error; err != nil {
+		fmt.Println("failed to update user in test")
+	}
 	req := httptest.NewRequest(http.MethodGet, "/v1/user/self", nil)
-	req.SetBasicAuth(user.Email, "password123") // Mocking the Basic Auth
+	req.SetBasicAuth(testUser.Email, "password123") // Mocking the Basic Auth
 	resp, err := app.Test(req, -1)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
@@ -118,9 +123,9 @@ func TestGetUser(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&fetchedUser)
 	assert.NoError(t, err)
 
-	assert.Equal(t, user.Email, fetchedUser.Email)
-	assert.Equal(t, user.FirstName, fetchedUser.FirstName)
-	assert.Equal(t, user.LastName, fetchedUser.LastName)
+	assert.Equal(t, testUser.Email, fetchedUser.Email)
+	assert.Equal(t, testUser.FirstName, fetchedUser.FirstName)
+	assert.Equal(t, testUser.LastName, fetchedUser.LastName)
 }
 
 // Test for updating a user's info

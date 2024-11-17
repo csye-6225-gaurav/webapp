@@ -1,11 +1,16 @@
 package repository
 
 import (
+	"context"
 	"encoding/json"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/csye-6225-gaurav/webapp/models"
 	"github.com/csye-6225-gaurav/webapp/storage"
 	"github.com/csye-6225-gaurav/webapp/utils"
@@ -80,9 +85,34 @@ func CreateUser(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{"message": "could not create user"})
 		return nil
 	}
-	user.Password = ""
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithRegion(os.Getenv("region")),
+	)
+	if err != nil {
+		zlog.Error().Err(err).Msg("Faild to load aws config")
+	}
+	msg := models.Message{
+		Email: user.Email,
+		Token: user.Token,
+	}
+	message, err := json.Marshal(msg)
+	snsClient := sns.NewFromConfig(cfg)
+	publishInput := sns.PublishInput{TopicArn: aws.String(os.Getenv("sns_topic")), Message: aws.String(string(message))}
+	_, err = snsClient.Publish(context.TODO(), &publishInput)
+	if err != nil {
+		zlog.Error().Err(err).Msg("Faild publish message")
+	}
+	resUser := models.ResponseUser{
+		ID:        user.ID,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+	}
 	zlog.Info().Str("endpoint", ctx.Path()).Str("user_id", user.ID.String()).Msg("User created successfully")
-	ctx.Status(fiber.StatusCreated).JSON(user)
+	ctx.Status(fiber.StatusCreated).JSON(resUser)
 	return nil
 }
 
@@ -107,9 +137,16 @@ func GetUser(ctx *fiber.Ctx) error {
 		return nil
 	}
 
-	user.Password = ""
+	resUser := models.ResponseUser{
+		ID:        user.ID,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+	}
 	zlog.Info().Str("endpoint", ctx.Path()).Str("user_id", user.ID.String()).Msg("User retrieved successfully")
-	ctx.Status(fiber.StatusOK).JSON(user)
+	ctx.Status(fiber.StatusOK).JSON(resUser)
 	return nil
 }
 
