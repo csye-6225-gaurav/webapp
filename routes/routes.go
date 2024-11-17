@@ -56,4 +56,5 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.SaveProfilePic)
 	v1.Get("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.GetProfilePic)
 	v1.Delete("/user/self/pic", middleware.CountMetric(), middleware.BasicAuthMiddleware(), repository.DeleteProfilePic)
+	v1.Get("/user/self/verify", middleware.CountMetric(), repository.VerifyUser)
 }
