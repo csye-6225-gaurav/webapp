@@ -55,7 +55,7 @@ jobs:
             -var subnet_id=${{ secrets.SUBNET_ID }} \
             -var ssh_username=${{ secrets.SSH_USERNAME }} \
             -var 'ami_users=[${{ secrets.DEMO_ACCOUNT_ID }}]' \
-            packer.pkr.hcl | tee /dev/tty | grep 'ami-' | tail -n1 | awk '{print $NF}')
+            packer.pkr.hcl | grep 'ami-' | tail -n1 | awk '{print $NF}')
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
 
       - name : build new launch template and perform instance refresh
