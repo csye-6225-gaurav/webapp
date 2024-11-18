@@ -46,13 +46,20 @@ jobs:
       - name: Build Packer image
         run: |
           cd ./packer
-          packer build \
-          -var profile=${{ secrets.AWS_PROFILE }} \
-          -var region=${{ secrets.AWS_REGION }} \
-          -var source_ami=${{ secrets.SOURCE_AMI }} \
-          -var ami_name=${{ secrets.AMI_NAME }} \
-          -var instance_type=${{ secrets.INSTANCE_TYPE }} \
-          -var subnet_id=${{ secrets.SUBNET_ID }} \
-          -var ssh_username=${{ secrets.SSH_USERNAME }} \
-          -var 'ami_users=[${{ secrets.DEMO_ACCOUNT_ID }}]' \
-          packer.pkr.hcl
+          AMI_ID=$(packer build \
+            -var profile=${{ secrets.AWS_PROFILE }} \
+            -var region=${{ secrets.AWS_REGION }} \
+            -var source_ami=${{ secrets.SOURCE_AMI }} \
+            -var ami_name="${{ secrets.AMI_NAME }}-$(date +'%Y%m%d%H%M%S')" \
+            -var instance_type=${{ secrets.INSTANCE_TYPE }} \
+            -var subnet_id=${{ secrets.SUBNET_ID }} \
+            -var ssh_username=${{ secrets.SSH_USERNAME }} \
+            -var 'ami_users=[${{ secrets.DEMO_ACCOUNT_ID }}]' \
+            packer.pkr.hcl | tee /dev/tty | grep 'ami-' | tail -n1 | awk '{print $NF}')
+          echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+
+      - name : build new launch template and perform instance refresh
+        run: |
+          webappLT_latest_version=$(aws ec2 describe-launch-template-versions --launch-template-name ${{secrets.LT_NAME}} --query 'reverse(sort_by(LaunchTemplateVersions, &VersionNumber))[0].VersionNumber')
+          aws ec2 create-launch-template-version --launch-template-name "${{secrets.LT_NAME}}" --source-version "$webappLT_latest_version" --launch-template-data '{"ImageId":"'"$AMI_ID"'"}'
+          aws autoscaling start-instance-refresh --auto-scaling-group-name "${{secrets.ASG_NAME}}" --strategy Rolling --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":300}'
