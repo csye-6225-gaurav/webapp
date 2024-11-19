@@ -102,3 +102,19 @@ jobs:
             --auto-scaling-group-name "${{secrets.ASG_NAME}}" \
             --strategy Rolling \
             --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":150}'
+
+          while true;
+          do
+            instance_refresh_status=$(aws autoscaling describe-instance-refreshes --auto-scaling-group-name ${{secrets.ASG_NAME}} \
+              --query "InstanceRefreshes[0].Status" --output text)
+            if [ "$instance_refresh_status" = "Successful" ]; then
+              printf "\nInstance refresh successful!"
+              break
+            fi
+            if [ "$instance_refresh_status" = "Cancelling" ] || [ "$instance_refresh_status" = "Cancelled" ] || [ "$instance_refresh_status" = "Failed" ]; then
+              printf "\nInstance refresh failed!"
+              exit 1
+            fi
+            echo -ne "."
+            sleep 10
+          done
