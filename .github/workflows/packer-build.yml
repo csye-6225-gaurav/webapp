@@ -64,12 +64,27 @@ jobs:
     needs: packer-build
 
     steps:
+      - name: Set Environment-Specific Variables
+        run: |
+          if [[ "${{ env.DEPLOYMENT_ENV }}" == "dev" ]]; then
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.DEV_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+            echo "AWS_REGION=${{ secrets.DEV_AWS_REGION }}" >> $GITHUB_ENV
+          elif [[ "${{ env.DEPLOYMENT_ENV }}" == "demo" ]]; then
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+            echo "AWS_REGION=${{ secrets.DEMO_AWS_REGION }}" >> $GITHUB_ENV
+          else
+            echo "Invalid deployment environment: ${{ env.DEPLOYMENT_ENV }}"
+            exit 1
+          fi
+
       - name: Configure AWS Credentials for Target Environment
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets[env.DEPLOYMENT_ENV | upper | append: '_AWS_ACCESS_KEY_ID'] }}
-          aws-secret-access-key: ${{ secrets[env.DEPLOYMENT_ENV | upper | append: '_AWS_SECRET_ACCESS_KEY'] }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Build Launch Template and Perform Instance Refresh
         run: |
