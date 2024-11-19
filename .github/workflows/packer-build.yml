@@ -46,7 +46,7 @@ jobs:
       - name: Build Packer image
         run: |
           cd ./packer
-          AMI_ID=$(packer build \
+          packer build \
             -var profile=${{ secrets.AWS_PROFILE }} \
             -var region=${{ secrets.AWS_REGION }} \
             -var source_ami=${{ secrets.SOURCE_AMI }} \
