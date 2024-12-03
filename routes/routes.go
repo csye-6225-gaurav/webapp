@@ -25,6 +25,7 @@ func SetupRoutes(app *fiber.App) {
 		return ctx.Next()
 	})
 	api.Get("/healthz", middleware.CountMetric(), repository.HealthCheck)
+	api.Get("/cicd", middleware.CountMetric(), repository.HealthCheck)
 	api.All("/healthz/*", middleware.CountMetric(), func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusNotFound)
 		return nil
